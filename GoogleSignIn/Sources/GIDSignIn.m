@@ -625,9 +625,31 @@ static const NSTimeInterval kMinimumRestoredAccessTokenTimeToExpire = 600.0;
                                                  code:kGIDSignInErrorCodeKeychain];
         return;
       }
-      GIDGoogleUser *user = [[GIDGoogleUser alloc] initWithAuthState:authState
-                                                         profileData:handlerAuthFlow.profileData];
-      [self setCurrentUserWithKVO:user];
+
+      NSArray<NSString *> *grantedScopes;
+      NSString *grantedScopeString = authState.lastTokenResponse.scope;
+      if (grantedScopeString) {
+        // If we have a 'scope' parameter from the backend, this is authoritative.
+        // Remove leading and trailing whitespace.
+        grantedScopeString = [grantedScopeString stringByTrimmingCharactersInSet:
+            [NSCharacterSet whitespaceCharacterSet]];
+        // Tokenize with space as a delimiter.
+        NSMutableArray<NSString *> *parsedScopes =
+            [[grantedScopeString componentsSeparatedByString:@" "] mutableCopy];
+        // Remove empty strings.
+        [parsedScopes removeObject:@""];
+        grantedScopes = [parsedScopes copy];
+      }
+
+      if ([GIDScopes containAdditionalScopes:grantedScopes]) {
+        [self->_currentUser updateScopes:grantedScopes
+                               AuthState:authState
+                             profileData:handlerAuthFlow.profileData];
+      } else {
+        GIDGoogleUser *user = [[GIDGoogleUser alloc] initWithAuthState:authState
+                                                           profileData:handlerAuthFlow.profileData];
+        [self setCurrentUserWithKVO:user];
+      }
     }
   }];
 }
@@ -643,7 +665,7 @@ static const NSTimeInterval kMinimumRestoredAccessTokenTimeToExpire = 600.0;
       return;
     }
     OIDIDToken *idToken =
-        [[OIDIDToken alloc] initWithIDTokenString:authState.lastTokenResponse.idToken];
+        [[OIDIDToken alloc] initWithIDTokenString: authState.lastTokenResponse.idToken];
     // If the profile data are present in the ID token, use them.
     if (idToken) {
       handlerAuthFlow.profileData = [self profileDataWithIDToken:idToken];

@@ -26,6 +26,9 @@ NS_ASSUME_NONNULL_BEGIN
 // Adds "email" and "profile" scopes to |scopes| if they are not already contained or implied.
 + (NSArray *)scopesWithBasicProfile:(NSArray *)scopes;
 
+// Check if additional scopes besides "email", "profile" and "openid" is included in the scopes array.
++ (BOOL)containAdditionalScopes:(NSArray *)scopes;
+
 @end
 
 NS_ASSUME_NONNULL_END

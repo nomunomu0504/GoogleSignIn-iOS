@@ -363,6 +363,8 @@ static void *kTestObserverContext = &kTestObserverContext;
   [_authState verify];
   [_tokenResponse verify];
   XCTAssertEqual(_signIn.currentUser.userID, kFakeGaiaID);
+
+  [idTokenDecoded stopMocking];
 }
 
 - (void)testRestoredPreviousSignInNoRefresh_hasNoPreviousUser {
@@ -1095,6 +1097,7 @@ static void *kTestObserverContext = &kTestObserverContext;
   if (keychainError) {
     _saveAuthorizationReturnValue = NO;
   } else {
+    [[[_authState expect] andReturn:tokenResponse] lastTokenResponse];
     (void)[[[_user expect] andReturn:_user] initWithAuthState:SAVE_TO_ARG_BLOCK(authState)
                                                   profileData:SAVE_TO_ARG_BLOCK(profileData)];
   }

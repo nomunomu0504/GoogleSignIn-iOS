@@ -31,22 +31,31 @@ static NSString *const kHostedDomainIDTokenClaimKey = @"hd";
 // Key constants used for encode and decode.
 static NSString *const kAuthenticationKey = @"authentication";
 static NSString *const kGrantedScopesKey = @"grantedScopes";
-static NSString *const kUserIDKey = @"userID";
-static NSString *const kServerAuthCodeKey = @"serverAuthCode";
 static NSString *const kProfileDataKey = @"profileData";
-static NSString *const kHostedDomainKey = @"hostedDomain";
+static NSString *const kAuthState = @"authState";
+static NSString *const kIDToken = @"idToken";
 
 // Parameters for the token exchange endpoint.
 static NSString *const kAudienceParameter = @"audience";
 static NSString *const kOpenIDRealmParameter = @"openid.realm";
 
 
-@implementation GIDGoogleUser
+@implementation GIDGoogleUser {
+  OIDAuthState *_authState;
+  NSString *_idToken;
+}
+
+@synthesize serverAuthCode = _serverAuthCode;
+@synthesize userID = _userID;
+@synthesize hostedDomain = _hostedDomain;
+@synthesize serverClientID = _serverClientID;
+@synthesize openIDRealm = _openIDRealm;
 
 - (instancetype)initWithAuthState:(OIDAuthState *)authState
                       profileData:(nullable GIDProfileData *)profileData {
   self = [super init];
   if (self) {
+    _authState = authState;
     _authentication = [[GIDAuthentication alloc] initWithAuthState:authState];
 
     NSArray<NSString *> *grantedScopes;
@@ -65,26 +74,45 @@ static NSString *const kOpenIDRealmParameter = @"openid.realm";
     }
     _grantedScopes = grantedScopes;
 
-    _serverAuthCode = [authState.lastTokenResponse.additionalParameters[@"server_code"] copy];
     _profile = [profileData copy];
 
-    NSString *idToken = authState.lastTokenResponse.idToken;
-    if (idToken) {
-      OIDIDToken *idTokenDecoded = [[OIDIDToken alloc] initWithIDTokenString:idToken];
-      if (idTokenDecoded.subject) {
-        _userID = [idTokenDecoded.subject copy];
-      }
-      if (idTokenDecoded.claims[kHostedDomainIDTokenClaimKey]) {
-        _hostedDomain = [idTokenDecoded.claims[kHostedDomainIDTokenClaimKey] copy];
-      }
-    }
-
-    _serverClientID =
-        [authState.lastTokenResponse.request.additionalParameters[kAudienceParameter] copy];
-    _openIDRealm =
-        [authState.lastTokenResponse.request.additionalParameters[kOpenIDRealmParameter] copy];
+    _idToken = authState.lastTokenResponse.idToken;
   }
   return self;
+}
+
+- (nullable NSString *)userID {
+  if (_idToken) {
+    OIDIDToken *idTokenDecoded = [[OIDIDToken alloc] initWithIDTokenString:_idToken];
+    if (idTokenDecoded && idTokenDecoded.subject) {
+      return [idTokenDecoded.subject copy];
+    }
+  }
+
+  return nil;
+}
+
+- (nullable NSString *)hostedDomain {
+  if (_idToken) {
+    OIDIDToken *idTokenDecoded = [[OIDIDToken alloc] initWithIDTokenString:_idToken];
+    if (idTokenDecoded && idTokenDecoded.claims[kHostedDomainIDTokenClaimKey]) {
+      return [idTokenDecoded.claims[kHostedDomainIDTokenClaimKey] copy];
+    }
+  }
+
+  return nil;
+}
+
+- (nullable NSString *)serverAuthCode {
+  return [_authState.lastTokenResponse.additionalParameters[@"server_code"] copy];
+}
+
+- (nullable NSString *)serverClientID {
+  return [_authState.lastTokenResponse.request.additionalParameters[kAudienceParameter] copy];
+}
+
+- (nullable NSString *)openIDRealm {
+  return [_authState.lastTokenResponse.request.additionalParameters[kOpenIDRealmParameter] copy];
 }
 
 #pragma mark - NSSecureCoding
@@ -99,10 +127,9 @@ static NSString *const kOpenIDRealmParameter = @"openid.realm";
     _authentication = [decoder decodeObjectOfClass:[GIDAuthentication class]
                                             forKey:kAuthenticationKey];
     _grantedScopes = [decoder decodeObjectOfClass:[NSArray class] forKey:kGrantedScopesKey];
-    _userID = [decoder decodeObjectOfClass:[NSString class] forKey:kUserIDKey];
-    _serverAuthCode = [decoder decodeObjectOfClass:[NSString class] forKey:kServerAuthCodeKey];
     _profile = [decoder decodeObjectOfClass:[GIDProfileData class] forKey:kProfileDataKey];
-    _hostedDomain = [decoder decodeObjectOfClass:[NSString class] forKey:kHostedDomainKey];
+    _authState = [decoder decodeObjectOfClass:[OIDAuthState class] forKey:kAuthState];
+    _idToken = [decoder decodeObjectOfClass:[NSString class] forKey:kIDToken];
   }
   return self;
 }
@@ -110,10 +137,20 @@ static NSString *const kOpenIDRealmParameter = @"openid.realm";
 - (void)encodeWithCoder:(NSCoder *)encoder {
   [encoder encodeObject:_authentication forKey:kAuthenticationKey];
   [encoder encodeObject:_grantedScopes forKey:kGrantedScopesKey];
-  [encoder encodeObject:_userID forKey:kUserIDKey];
-  [encoder encodeObject:_serverAuthCode forKey:kServerAuthCodeKey];
   [encoder encodeObject:_profile forKey:kProfileDataKey];
-  [encoder encodeObject:_hostedDomain forKey:kHostedDomainKey];
+  [encoder encodeObject:_authState forKey:kAuthState];
+  [encoder encodeObject:_idToken forKey:kIDToken];
+}
+
+#pragma mark - private method
+- (void)updateScopes:(NSArray<NSString *> *)scopes
+           AuthState:(OIDAuthState *)authState
+         profileData:(nullable GIDProfileData *)profileData {
+  _grantedScopes = scopes;
+  _authState = authState;
+  _authentication = [[GIDAuthentication alloc] initWithAuthState:authState];
+  _profile = [profileData copy];
+  _idToken = authState.lastTokenResponse.idToken;
 }
 
 @end
