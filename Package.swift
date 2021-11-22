@@ -33,11 +33,11 @@ let package = Package(
     .package(
       name: "AppAuth",
       url: "https://github.com/openid/AppAuth-iOS.git",
-      "1.4.0" ..< "2.0.0"),
+      .branch("master")),
     .package(
       name: "GTMAppAuth",
       url: "https://github.com/google/GTMAppAuth.git",
-      .branch("master"),
+      .branch("master")),
     .package(
       name: "GTMSessionFetcher",
       url: "https://github.com/google/gtm-session-fetcher.git",
@@ -45,7 +45,7 @@ let package = Package(
     .package(
       name: "OCMock",
       url: "https://github.com/firebase/ocmock.git",
-      .revision("7291762d3551c5c7e31c49cce40a0e391a52e889")),
+      "3.0.0" ..< "4.0.0"),
     .package(
       name: "GoogleUtilities",
       url: "https://github.com/google/GoogleUtilities.git",
