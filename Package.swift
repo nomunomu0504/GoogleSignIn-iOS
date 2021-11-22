@@ -46,7 +46,7 @@ let package = Package(
     .package(
       name: "OCMock",
       url: "https://github.com/firebase/ocmock.git",
-      "3.0.0" ..< "4.0.0"),
+      .branch("master")),
     .package(
       name: "GoogleUtilities",
       url: "https://github.com/google/GoogleUtilities.git",
