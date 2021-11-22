@@ -22,7 +22,8 @@ let googleSignInVersion = "6.0.2"
 let package = Package(
   name: "GoogleSignIn-nomu",
   defaultLocalization: "en",
-  platforms: [.iOS(.v9)],
+  platforms: [.iOS(.v9),
+        .macOS(.v10_11)],
   products: [
     .library(
       name: "GoogleSignIn-nomu",
