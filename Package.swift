@@ -20,12 +20,12 @@ import PackageDescription
 let googleSignInVersion = "6.0.2"
 
 let package = Package(
-  name: "GoogleSignIn",
+  name: "GoogleSignIn-nomu",
   defaultLocalization: "en",
   platforms: [.iOS(.v9)],
   products: [
     .library(
-      name: "GoogleSignIn",
+      name: "GoogleSignIn-nomu",
       targets: ["GoogleSignIn"]
     ),
   ],
